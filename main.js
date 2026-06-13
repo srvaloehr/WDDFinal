@@ -344,7 +344,6 @@ function findMovieById(movies, movieId) {
   if (rtBadge) {
     rtBadge.textContent = "RT: " + ratings.rottenTomatoes;
   }
-}
 
 // Builds and shows the snack suggestion card
 function renderSnack(snack) {
