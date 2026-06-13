@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>ReelMood - Movie and Snack Picker for Two</title>
+    <meta
+      name="description"
+      content="ReelMood helps two people pick a movie and a snack for movie night. Answer a quick mood quiz and get matched with a movie and snack pairing."
+    />
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <h1 class="logo">ReelMood</h1>
+
+        <nav aria-label="Main navigation">
+          <ul class="nav-list">
+            <li>
+              <button
+                type="button"
+                class="nav-btn active"
+                data-view="quiz-view"
+                aria-current="page"
+              >
+                Quiz
+              </button>
+            </li>
+            <li>
+              <button type="button" class="nav-btn" data-view="results-view">
+                Results
+              </button>
+            </li>
+            <li>
+              <button type="button" class="nav-btn" data-view="watchlist-view">
+                Watchlist
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main-content" class="container">
+
+      <section id="quiz-view" class="view active" aria-labelledby="quiz-heading">
+        <h2 id="quiz-heading" class="view-heading">Tonight's Mood Quiz</h2>
+        <p class="view-subheading">
+          Answer a few quick questions to help us find a movie and snack for
+          tonight.
+        </p>
+
+        
+        <div class="player-toggle" role="group" aria-label="Choose who is answering">
+          <button type="button" class="player-btn active" data-player="1">
+            Person 1
+          </button>
+          <button type="button" class="player-btn" data-player="2">
+            Person 2
+          </button>
+        </div>
+
+        
+        <p class="quiz-progress" id="quiz-progress" aria-live="polite">
+          Question 1 of 5
+        </p>
+
+       
+        <div id="quiz-card-container" class="quiz-card-container">
+         
+          <div class="quiz-card" id="quiz-card">
+            <h3 class="quiz-question" id="quiz-question">
+              How much energy do you have tonight?
+            </h3>
+
+            <div class="quiz-options" id="quiz-options">
+              <button type="button" class="quiz-option" data-value="low">
+                Wiped out
+              </button>
+              <button type="button" class="quiz-option" data-value="medium">
+                Somewhere in the middle
+              </button>
+              <button type="button" class="quiz-option" data-value="high">
+                Ready to go
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="quiz-nav">
+          <button type="button" id="quiz-back-btn" class="btn btn-secondary" disabled>
+            Back
+          </button>
+          <button type="button" id="quiz-next-btn" class="btn btn-primary" disabled>
+            Next
+          </button>
+        </div>
+      </section>
+
+      
+      <section
+        id="results-view"
+        class="view"
+        aria-labelledby="results-heading"
+        hidden
+      >
+        <h2 id="results-heading" class="view-heading">Tonight's Picks</h2>
+        <p class="view-subheading">
+          Based on both of your answers, here is what we found.
+        </p>
+
+        <!-- Loading message shown while API calls are running -->
+        <p id="results-loading" class="loading-message" hidden>
+          Finding your movie and snack...
+        </p>
+
+        <div id="movie-results" class="movie-grid" aria-live="polite">
+         
+          <article class="movie-card">
+            <img
+              class="movie-poster"
+              src="https://placehold.co/300x450/2d3748/f0f0f0?text=Movie+Poster"
+              alt="Placeholder movie poster"
+              width="300"
+              height="450"
+            />
+            <div class="movie-card-body">
+              <h3 class="movie-title">Example Movie Title</h3>
+              <p class="movie-meta">2020 &middot; 118 min &middot; Drama</p>
+              <p class="movie-ratings">
+                <span class="rating-badge">IMDb 7.5</span>
+                <span class="rating-badge">RT 88%</span>
+              </p>
+              <p class="movie-reason">
+                Matches your "ready to go" energy and "make me think" pick.
+              </p>
+              <div class="movie-card-actions">
+                <button type="button" class="btn btn-secondary btn-small watchlist-btn">
+                  Add to Watchlist
+                </button>
+                <button type="button" class="btn btn-primary btn-small details-btn">
+                  Details
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+
+
+
+        <h3 class="section-subheading">Snack Pairing</h3>
+        <div id="snack-result" class="snack-card">
+          <img
+            class="snack-image"
+            src="https://placehold.co/200x150/2d3748/f0f0f0?text=Snack"
+            alt="Placeholder snack image"
+            width="200"
+            height="150"
+          />
+          <div class="snack-card-body">
+            <h4 class="snack-name">Example Snack Name</h4>
+            <p class="snack-description">
+              A short description of the snack will appear here.
+            </p>
+          </div>
+        </div>
+
+       
+        <div class="results-actions">
+          <button type="button" id="random-pick-btn" class="btn btn-secondary">
+            Too picky? Pick for us
+          </button>
+        </div>
+      </section>
+
+
+      <div
+        id="details-panel"
+        class="details-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="details-title"
+        hidden
+      >
+        <div class="details-panel-content">
+          <button
+            type="button"
+            id="details-close-btn"
+            class="details-close-btn"
+            aria-label="Close details"
+          >
+            &times;
+          </button>
+          <h3 id="details-title" class="details-title">Movie Title</h3>
+          <p id="details-meta" class="details-meta">Year &middot; Runtime &middot; Genre</p>
+          <p id="details-overview" class="details-overview">
+            The movie synopsis will appear here once the API call is connected.
+          </p>
+        </div>
+      </div>
+
+
+      <section
+        id="watchlist-view"
+        class="view"
+        aria-labelledby="watchlist-heading"
+        hidden
+      >
+        <h2 id="watchlist-heading" class="view-heading">Your Watchlist</h2>
+        <p class="view-subheading">
+          Movies you have saved for later. Saved on this device only.
+        </p>
+
+
+        <p id="watchlist-empty" class="empty-message" hidden>
+          Your watchlist is empty. Add a movie from the Results page.
+        </p>
+
+        
+        <div id="watchlist-items" class="movie-grid" aria-live="polite">
+         
+          <article class="movie-card">
+            <img
+              class="movie-poster"
+              src="https://placehold.co/300x450/2d3748/f0f0f0?text=Saved+Movie"
+              alt="Placeholder saved movie poster"
+              width="300"
+              height="450"
+            />
+            <div class="movie-card-body">
+              <h3 class="movie-title">Saved Movie Example</h3>
+              <p class="movie-meta">2019 &middot; 102 min &middot; Comedy</p>
+              <div class="movie-card-actions">
+                <button type="button" class="btn btn-secondary btn-small remove-btn">
+                  Remove
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>
+          ReelMood uses
+          <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">TMDB</a>,
+          <a href="https://www.omdbapi.com/" target="_blank" rel="noopener noreferrer">OMDb</a>, and
+          <a href="https://www.themealdb.com/" target="_blank" rel="noopener noreferrer">TheMealDB</a>.
+        </p>
+      </div>
+    </footer>
+
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>
