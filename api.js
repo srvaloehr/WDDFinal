@@ -1,6 +1,3 @@
-// api.js - All third-party API calls
-// Uses: TMDB (2 endpoints: discover + movie details), OMDb, TheMealDB
-
 import {
   TMDB_API_KEY,
   TMDB_BASE_URL,
@@ -10,7 +7,6 @@ import {
   MEALDB_BASE_URL,
 } from "./config.js";
 
-// Maps quiz mood answers to TMDB genre IDs
 var GENRE_MAP = {
   comedy: 35,
   drama: 18,
@@ -18,7 +14,7 @@ var GENRE_MAP = {
   action: 28,
 };
 
-// Maps quiz snack answers to MealDB categories
+
 var SNACK_CATEGORY_MAP = {
   salty: "Side",
   sweet: "Dessert",
@@ -26,8 +22,6 @@ var SNACK_CATEGORY_MAP = {
   any: "Snack",
 };
 
-// --- ENDPOINT 1: TMDB /discover/movie ---
-// Returns up to 4 movies for a given genre
 
 export async function getMovies(genre) {
   try {
@@ -91,9 +85,6 @@ export async function getMovies(genre) {
   }
 }
 
-// --- ENDPOINT 2: TMDB /movie/{id} ---
-// Returns full details for one movie
-
 export async function getMovieDetails(movieId) {
   try {
     var url =
@@ -141,8 +132,6 @@ export async function getMovieDetails(movieId) {
   }
 }
 
-// --- ENDPOINT 3: OMDb ---
-// Returns IMDb and Rotten Tomatoes ratings for a movie title
 
 export async function getRatings(movieTitle) {
   try {
@@ -181,9 +170,6 @@ export async function getRatings(movieTitle) {
   }
 }
 
-// --- ENDPOINT 4: TheMealDB ---
-// Returns a random snack suggestion for the given preference
-
 export async function getSnack(snackPreference) {
   try {
     var category = SNACK_CATEGORY_MAP[snackPreference];
@@ -205,7 +191,7 @@ export async function getSnack(snackPreference) {
       return null;
     }
 
-    // Pick a random meal from the list
+    // Pick random
     var randomIndex = Math.floor(Math.random() * data.meals.length);
     var meal = data.meals[randomIndex];
 

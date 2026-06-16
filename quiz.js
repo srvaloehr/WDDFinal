@@ -1,5 +1,3 @@
-// quiz.js - Quiz questions and logic for combining two players' answers
-
 export var QUIZ_QUESTIONS = [
   {
     id: "energy",
@@ -49,25 +47,25 @@ export var QUIZ_QUESTIONS = [
   },
 ];
 
-// Takes both players' answer objects and returns one combined settings object
+//combines answer
 export function combineAnswers(player1Answers, player2Answers) {
   var settings = {};
 
-  // Genre: if they agree use it, otherwise go with player 1
+  // Genre
   if (player1Answers.mood === player2Answers.mood) {
     settings.genre = player1Answers.mood;
   } else {
     settings.genre = player1Answers.mood;
   }
 
-  // Energy: if they agree use it, otherwise split the difference
+  // Energy
   if (player1Answers.energy === player2Answers.energy) {
     settings.energy = player1Answers.energy;
   } else {
     settings.energy = "medium";
   }
 
-  // Length: pick the shorter of the two preferences
+  // Length
   var lengthOrder = { short: 1, medium: 2, any: 3 };
   var p1Length = player1Answers.length || "any";
   var p2Length = player2Answers.length || "any";
@@ -77,11 +75,11 @@ export function combineAnswers(player1Answers, player2Answers) {
     settings.length = p2Length;
   }
 
-  // Subtitles: only OK if both agree
+  // Subtitles
   settings.subtitlesOk =
     player1Answers.subtitles === "yes" && player2Answers.subtitles === "yes";
 
-  // Snack: if they agree use it, otherwise go mixed
+  // Snack
   if (player1Answers.snack === player2Answers.snack) {
     settings.snack = player1Answers.snack;
   } else {

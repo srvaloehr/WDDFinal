@@ -1,5 +1,3 @@
-// main.js - Main application logic for ReelMood
-
 import { QUIZ_QUESTIONS, combineAnswers } from "./quiz.js";
 import {
   getWatchlist,
@@ -45,7 +43,6 @@ var watchlistCount = document.getElementById("watchlist-count");
 
 var darkModeToggle = document.getElementById("dark-mode-toggle");
 
-// --- App state ---
 
 var currentPlayer = 1;
 var currentQuestionIndex = 0;
@@ -53,14 +50,14 @@ var player1Answers = {};
 var player2Answers = {};
 var lastMovies = [];
 
-// --- Dark mode: restore saved preference on load ---
+
 
 if (getDarkMode()) {
   document.body.classList.add("dark-mode");
   darkModeToggle.textContent = "☀️ Light Mode";
 }
 
-// --- EVENT 1: Dark mode toggle ---
+//  Dark mode toggle 
 darkModeToggle.addEventListener("click", function () {
   var isDark = document.body.classList.toggle("dark-mode");
   saveDarkMode(isDark);
@@ -71,7 +68,7 @@ darkModeToggle.addEventListener("click", function () {
   }
 });
 
-// --- EVENT 2: Navigation between views ---
+// Navigate
 for (var i = 0; i < navButtons.length; i++) {
   navButtons[i].addEventListener("click", function () {
     var viewId = this.dataset.view;
@@ -104,7 +101,7 @@ function showView(viewId) {
   }
 }
 
-// --- EVENT 3: Player toggle (Person 1 / Person 2) ---
+// Player toggl
 for (var i = 0; i < playerButtons.length; i++) {
   playerButtons[i].addEventListener("click", function () {
     currentPlayer = Number(this.dataset.player);
@@ -119,7 +116,7 @@ for (var i = 0; i < playerButtons.length; i++) {
   });
 }
 
-// --- Quiz rendering ---
+
 
 function renderQuestion(direction) {
   var question = QUIZ_QUESTIONS[currentQuestionIndex];
@@ -158,7 +155,7 @@ function renderQuestion(direction) {
     "</div>" +
     "</div>";
 
-  // EVENT 4: Quiz option selection (inside each rendered question)
+  //  Quiz option selection 
   var optionButtons = quizCardContainer.querySelectorAll(".quiz-option");
   for (var i = 0; i < optionButtons.length; i++) {
     optionButtons[i].addEventListener("click", function () {
@@ -180,7 +177,7 @@ function renderQuestion(direction) {
     currentQuestionIndex === QUIZ_QUESTIONS.length - 1 ? "Finish" : "Next";
 }
 
-// EVENT 5: Quiz Next / Finish button
+// Quiz Next / Finish button
 quizNextBtn.addEventListener("click", function () {
   var isLast = currentQuestionIndex === QUIZ_QUESTIONS.length - 1;
   if (isLast) {
@@ -191,7 +188,7 @@ quizNextBtn.addEventListener("click", function () {
   renderQuestion("right");
 });
 
-// EVENT 6: Quiz Back button
+// Quiz Back 
 quizBackBtn.addEventListener("click", function () {
   if (currentQuestionIndex === 0) return;
   currentQuestionIndex--;
@@ -216,13 +213,12 @@ function handleQuizFinish() {
     return;
   }
 
-  // Both players done — save quiz answers and go to results
+  // Save quiz answers :results
   saveLastQuiz(player1Answers, player2Answers);
   showView("results-view");
   loadResults();
 }
 
-// --- Results ---
 
 async function loadResults() {
   resultsLoading.hidden = false;
@@ -231,10 +227,10 @@ async function loadResults() {
 
   var settings = combineAnswers(player1Answers, player2Answers);
 
-  // Save the last genre so the page can remind the user on their next visit
+  // Save the last genre so the page can remind next visit
   saveLastGenre(settings.genre);
 
-  // Show the last genre if it was saved from a previous session
+  // Show the last genre
   var lastGenre = getLastGenre();
   if (lastGenreLabel && lastGenre) {
     lastGenreLabel.textContent = "Last time you picked: " + lastGenre;
@@ -282,7 +278,7 @@ function renderMovies(movies) {
       '" width="300" height="450" />' +
       "</div>" +
 
-      // Back of the card (overview text)
+      // Back of the card 
       '<div class="card-back">' +
       '<p class="card-back-overview">' +
       (movie.overview || "No overview available.") +
@@ -312,12 +308,12 @@ function renderMovies(movies) {
 
   movieResults.innerHTML = html;
 
-  // Fetch ratings for each movie asynchronously
+  // Fetch ratings
   for (var i = 0; i < movies.length; i++) {
     fillInRatings(movies[i]);
   }
 
-  // Hook up watchlist buttons
+  // Watchlist buttons
   var watchlistButtons = document.querySelectorAll(".watchlist-btn");
   for (var i = 0; i < watchlistButtons.length; i++) {
     watchlistButtons[i].addEventListener("click", function () {
@@ -327,7 +323,7 @@ function renderMovies(movies) {
     });
   }
 
-  // Hook up details buttons
+
   var detailsButtons = document.querySelectorAll(".details-btn");
   for (var i = 0; i < detailsButtons.length; i++) {
     detailsButtons[i].addEventListener("click", function () {
@@ -337,7 +333,7 @@ function renderMovies(movies) {
   }
 }
 
-// Fills in IMDb and RT ratings once the OMDb call comes back
+// Fills in IMDb 
 async function fillInRatings(movie) {
   var ratings = await getRatings(movie.title);
 
@@ -380,7 +376,7 @@ function renderSnack(snack) {
     "</div>";
 }
 
-// EVENT 7: "Pick for us" random button
+// "Pick for us"
 randomPickBtn.addEventListener("click", function () {
   if (lastMovies.length === 0) return;
 
@@ -401,7 +397,7 @@ randomPickBtn.addEventListener("click", function () {
   }
 });
 
-// --- Details panel ---
+
 
 async function openDetailsPanel(movieId) {
   detailsPanel.hidden = false;
@@ -436,13 +432,12 @@ async function openDetailsPanel(movieId) {
   }
 }
 
-// EVENT 8: Close details panel via button
 detailsCloseBtn.addEventListener("click", function () {
   detailsPanel.hidden = true;
   detailsPanel.classList.remove("panel-open");
 });
 
-// EVENT 9: Close details panel via Escape key
+// Close details
 document.addEventListener("keydown", function (event) {
   if (event.key === "Escape" && !detailsPanel.hidden) {
     detailsPanel.hidden = true;
@@ -450,7 +445,6 @@ document.addEventListener("keydown", function (event) {
   }
 });
 
-// --- Watchlist ---
 
 function handleAddToWatchlist(movie, button) {
   if (!movie) return;
@@ -467,7 +461,7 @@ function handleAddToWatchlist(movie, button) {
   button.textContent = "✓ Saved";
   button.disabled = true;
 
-  // Small confirmation animation on the card
+  //  Animation card
   var card = button.closest(".movie-card");
   if (card) {
     card.classList.add("confirm-save");
@@ -480,7 +474,7 @@ function handleAddToWatchlist(movie, button) {
     );
   }
 
-  // Update the watchlist count badge in the nav
+  // Update the watchlist
   updateWatchlistCount();
 }
 
@@ -527,7 +521,7 @@ function renderWatchlist() {
 
   watchlistItems.innerHTML = html;
 
-  // EVENT 10: Remove from watchlist
+  // Remove from watchlist
   var removeButtons = document.querySelectorAll(".remove-btn");
   for (var i = 0; i < removeButtons.length; i++) {
     removeButtons[i].addEventListener("click", function () {
@@ -547,13 +541,12 @@ function updateWatchlistCount() {
   }
 }
 
-// --- Load quiz from last session if available ---
+
 var savedQuiz = getLastQuiz();
 if (savedQuiz) {
   player1Answers = savedQuiz.player1 || {};
   player2Answers = savedQuiz.player2 || {};
 }
 
-// --- Init ---
 updateWatchlistCount();
 renderQuestion("right");
