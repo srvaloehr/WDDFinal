@@ -1,50 +1,89 @@
-
+// main.js - Main application logic for ReelMood
 
 import { QUIZ_QUESTIONS, combineAnswers } from "./quiz.js";
-import { getWatchlist, addToWatchlist, removeFromWatchlist } from "./storage.js";
+import {
+  getWatchlist,
+  addToWatchlist,
+  removeFromWatchlist,
+  saveLastQuiz,
+  getLastQuiz,
+  saveDarkMode,
+  getDarkMode,
+  saveLastGenre,
+  getLastGenre,
+} from "./storage.js";
 import { getMovies, getMovieDetails, getRatings, getSnack } from "./api.js";
 
+// --- Grab all the DOM elements we need ---
 
+var navButtons = document.querySelectorAll(".nav-btn");
+var views = document.querySelectorAll(".view");
 
-const navButtons = document.querySelectorAll(".nav-btn");
-const views = document.querySelectorAll(".view");
+var playerButtons = document.querySelectorAll(".player-btn");
+var quizProgress = document.getElementById("quiz-progress");
+var quizCardContainer = document.getElementById("quiz-card-container");
+var quizBackBtn = document.getElementById("quiz-back-btn");
+var quizNextBtn = document.getElementById("quiz-next-btn");
 
-const playerButtons = document.querySelectorAll(".player-btn");
-const quizProgress = document.getElementById("quiz-progress");
-const quizCardContainer = document.getElementById("quiz-card-container");
-const quizBackBtn = document.getElementById("quiz-back-btn");
-const quizNextBtn = document.getElementById("quiz-next-btn");
+var resultsLoading = document.getElementById("results-loading");
+var movieResults = document.getElementById("movie-results");
+var snackResult = document.getElementById("snack-result");
+var randomPickBtn = document.getElementById("random-pick-btn");
+var lastGenreLabel = document.getElementById("last-genre-label");
 
-const resultsLoading = document.getElementById("results-loading");
-const movieResults = document.getElementById("movie-results");
-const snackResult = document.getElementById("snack-result");
-const randomPickBtn = document.getElementById("random-pick-btn");
+var detailsPanel = document.getElementById("details-panel");
+var detailsCloseBtn = document.getElementById("details-close-btn");
+var detailsTitle = document.getElementById("details-title");
+var detailsMeta = document.getElementById("details-meta");
+var detailsOverview = document.getElementById("details-overview");
+var detailsTagline = document.getElementById("details-tagline");
+var detailsExtra = document.getElementById("details-extra");
 
-const detailsPanel = document.getElementById("details-panel");
-const detailsCloseBtn = document.getElementById("details-close-btn");
-const detailsTitle = document.getElementById("details-title");
-const detailsMeta = document.getElementById("details-meta");
-const detailsOverview = document.getElementById("details-overview");
+var watchlistItems = document.getElementById("watchlist-items");
+var watchlistEmpty = document.getElementById("watchlist-empty");
+var watchlistCount = document.getElementById("watchlist-count");
 
-const watchlistItems = document.getElementById("watchlist-items");
-const watchlistEmpty = document.getElementById("watchlist-empty");
+var darkModeToggle = document.getElementById("dark-mode-toggle");
 
+// --- App state ---
 
+var currentPlayer = 1;
+var currentQuestionIndex = 0;
+var player1Answers = {};
+var player2Answers = {};
+var lastMovies = [];
 
-let currentPlayer = 1;
-let currentQuestionIndex = 0;
+// --- Dark mode: restore saved preference on load ---
 
+if (getDarkMode()) {
+  document.body.classList.add("dark-mode");
+  darkModeToggle.textContent = "☀️ Light Mode";
+}
 
-let player1Answers = {};
-let player2Answers = {};
+// --- EVENT 1: Dark mode toggle ---
+darkModeToggle.addEventListener("click", function () {
+  var isDark = document.body.classList.toggle("dark-mode");
+  saveDarkMode(isDark);
+  if (isDark) {
+    darkModeToggle.textContent = "☀️ Light Mode";
+  } else {
+    darkModeToggle.textContent = "🌙 Dark Mode";
+  }
+});
 
-// Saved so the "Pick for us" button can use the same results
-let lastMovies = [];
-
-
+// --- EVENT 2: Navigation between views ---
+for (var i = 0; i < navButtons.length; i++) {
+  navButtons[i].addEventListener("click", function () {
+    var viewId = this.dataset.view;
+    showView(viewId);
+    if (viewId === "watchlist-view") {
+      renderWatchlist();
+    }
+  });
+}
 
 function showView(viewId) {
-  for (let i = 0; i < views.length; i++) {
+  for (var i = 0; i < views.length; i++) {
     if (views[i].id === viewId) {
       views[i].classList.add("active");
       views[i].hidden = false;
@@ -54,7 +93,7 @@ function showView(viewId) {
     }
   }
 
-  for (let i = 0; i < navButtons.length; i++) {
+  for (var i = 0; i < navButtons.length; i++) {
     if (navButtons[i].dataset.view === viewId) {
       navButtons[i].classList.add("active");
       navButtons[i].setAttribute("aria-current", "page");
@@ -65,54 +104,36 @@ function showView(viewId) {
   }
 }
 
-for (let i = 0; i < navButtons.length; i++) {
-  navButtons[i].addEventListener("click", () => {
-    const viewId = navButtons[i].dataset.view;
-    showView(viewId);
+// --- EVENT 3: Player toggle (Person 1 / Person 2) ---
+for (var i = 0; i < playerButtons.length; i++) {
+  playerButtons[i].addEventListener("click", function () {
+    currentPlayer = Number(this.dataset.player);
 
-    if (viewId === "watchlist-view") {
-      renderWatchlist();
-    }
-  });
-}
-
-for (let i = 0; i < playerButtons.length; i++) {
-  playerButtons[i].addEventListener("click", () => {
-    currentPlayer = Number(playerButtons[i].dataset.player);
-
-    for (let j = 0; j < playerButtons.length; j++) {
+    for (var j = 0; j < playerButtons.length; j++) {
       playerButtons[j].classList.remove("active");
     }
-    playerButtons[i].classList.add("active");
+    this.classList.add("active");
 
-    renderQuestion();
+    currentQuestionIndex = 0;
+    renderQuestion("right");
   });
 }
 
-function renderQuestion(direction = "right") {
-  const question = QUIZ_QUESTIONS[currentQuestionIndex];
+// --- Quiz rendering ---
+
+function renderQuestion(direction) {
+  var question = QUIZ_QUESTIONS[currentQuestionIndex];
 
   quizProgress.textContent =
     "Question " + (currentQuestionIndex + 1) + " of " + QUIZ_QUESTIONS.length;
 
-  // Figure out which answers object belongs to the current player
-  let currentAnswers = player1Answers;
-  if (currentPlayer === 2) {
-    currentAnswers = player2Answers;
-  }
+  var currentAnswers = currentPlayer === 2 ? player2Answers : player1Answers;
+  var savedAnswer = currentAnswers[question.id];
 
-  const savedAnswer = currentAnswers[question.id];
-
-  // Build the option buttons as an HTML string
-  let optionsHtml = "";
-  for (let i = 0; i < question.options.length; i++) {
-    const option = question.options[i];
-
-    let selectedClass = "";
-    if (option.value === savedAnswer) {
-      selectedClass = "selected";
-    }
-
+  var optionsHtml = "";
+  for (var i = 0; i < question.options.length; i++) {
+    var option = question.options[i];
+    var selectedClass = option.value === savedAnswer ? "selected" : "";
     optionsHtml +=
       '<button type="button" class="quiz-option ' +
       selectedClass +
@@ -123,10 +144,7 @@ function renderQuestion(direction = "right") {
       "</button>";
   }
 
-  let slideClass = "";
-  if (direction === "left") {
-    slideClass = "slide-in-left";
-  }
+  var slideClass = direction === "left" ? "slide-in-left" : "";
 
   quizCardContainer.innerHTML =
     '<div class="quiz-card ' +
@@ -140,66 +158,53 @@ function renderQuestion(direction = "right") {
     "</div>" +
     "</div>";
 
-  
-  const optionButtons = quizCardContainer.querySelectorAll(".quiz-option");
-  for (let i = 0; i < optionButtons.length; i++) {
-    optionButtons[i].addEventListener("click", () => {
-      // Save the answer for the current player
-      currentAnswers[question.id] = optionButtons[i].dataset.value;
+  // EVENT 4: Quiz option selection (inside each rendered question)
+  var optionButtons = quizCardContainer.querySelectorAll(".quiz-option");
+  for (var i = 0; i < optionButtons.length; i++) {
+    optionButtons[i].addEventListener("click", function () {
+      var currentAnswers = currentPlayer === 2 ? player2Answers : player1Answers;
+      currentAnswers[question.id] = this.dataset.value;
 
-      // Mark this option as selected
-      for (let j = 0; j < optionButtons.length; j++) {
+      for (var j = 0; j < optionButtons.length; j++) {
         optionButtons[j].classList.remove("selected");
       }
-      optionButtons[i].classList.add("selected");
+      this.classList.add("selected");
 
       quizNextBtn.disabled = false;
     });
   }
 
-  // Enable/disable the Next and Back buttons
   quizNextBtn.disabled = !savedAnswer;
   quizBackBtn.disabled = currentQuestionIndex === 0;
-
-  // Change the Next button text on the last question
-  if (currentQuestionIndex === QUIZ_QUESTIONS.length - 1) {
-    quizNextBtn.textContent = "Finish";
-  } else {
-    quizNextBtn.textContent = "Next";
-  }
+  quizNextBtn.textContent =
+    currentQuestionIndex === QUIZ_QUESTIONS.length - 1 ? "Finish" : "Next";
 }
 
-// "Next" / "Finish" button
-quizNextBtn.addEventListener("click", () => {
-  const isLastQuestion = currentQuestionIndex === QUIZ_QUESTIONS.length - 1;
-
-  if (isLastQuestion) {
+// EVENT 5: Quiz Next / Finish button
+quizNextBtn.addEventListener("click", function () {
+  var isLast = currentQuestionIndex === QUIZ_QUESTIONS.length - 1;
+  if (isLast) {
     handleQuizFinish();
     return;
   }
-
   currentQuestionIndex++;
   renderQuestion("right");
 });
 
-// "Back" button
-quizBackBtn.addEventListener("click", () => {
-  if (currentQuestionIndex === 0) {
-    return;
-  }
-
+// EVENT 6: Quiz Back button
+quizBackBtn.addEventListener("click", function () {
+  if (currentQuestionIndex === 0) return;
   currentQuestionIndex--;
   renderQuestion("left");
 });
 
-
 function handleQuizFinish() {
-
+  // If player 1 just finished, switch to player 2
   if (currentPlayer === 1) {
     currentPlayer = 2;
     currentQuestionIndex = 0;
 
-    for (let i = 0; i < playerButtons.length; i++) {
+    for (var i = 0; i < playerButtons.length; i++) {
       if (Number(playerButtons[i].dataset.player) === 2) {
         playerButtons[i].classList.add("active");
       } else {
@@ -211,25 +216,33 @@ function handleQuizFinish() {
     return;
   }
 
-  // Both players are done - show the results page
+  // Both players done — save quiz answers and go to results
+  saveLastQuiz(player1Answers, player2Answers);
   showView("results-view");
   loadResults();
 }
 
-
-// RESULTS
+// --- Results ---
 
 async function loadResults() {
   resultsLoading.hidden = false;
   movieResults.innerHTML = "";
   snackResult.innerHTML = "";
 
-  // Combine both players' answers into one settings object
-  const settings = combineAnswers(player1Answers, player2Answers);
+  var settings = combineAnswers(player1Answers, player2Answers);
 
-  // Get movies and a snack
-  const movies = await getMovies(settings.genre);
-  const snack = await getSnack(settings.snack);
+  // Save the last genre so the page can remind the user on their next visit
+  saveLastGenre(settings.genre);
+
+  // Show the last genre if it was saved from a previous session
+  var lastGenre = getLastGenre();
+  if (lastGenreLabel && lastGenre) {
+    lastGenreLabel.textContent = "Last time you picked: " + lastGenre;
+    lastGenreLabel.hidden = false;
+  }
+
+  var movies = await getMovies(settings.genre);
+  var snack = await getSnack(settings.snack);
 
   lastMovies = movies;
 
@@ -239,44 +252,51 @@ async function loadResults() {
   renderSnack(snack);
 }
 
-// Builds and shows the movie result cards
 function renderMovies(movies) {
   if (movies.length === 0) {
     movieResults.innerHTML =
-      '<p class="empty-message">No movies found. Please try the quiz again.</p>';
+      '<p class="empty-message">No movies found. Try the quiz again.</p>';
     return;
   }
 
-  let html = "";
+  var html = "";
 
-  for (let i = 0; i < movies.length; i++) {
-    const movie = movies[i];
-
-    // Each card gets a slightly longer delay so they appear 
-   
-    const delay = i * 0.15;
+  for (var i = 0; i < movies.length; i++) {
+    var movie = movies[i];
+    var delay = i * 0.15;
 
     html +=
-      '<article class="movie-card" style="animation-delay: ' +
+      '<article class="movie-card fade-in" style="animation-delay:' +
       delay +
       's" data-movie-id="' +
       movie.id +
       '">' +
+      '<div class="card-flip-inner">' +
+
+      // Front of the card
+      '<div class="card-front">' +
       '<img class="movie-poster" src="' +
       movie.posterUrl +
       '" alt="Poster for ' +
       movie.title +
       '" width="300" height="450" />' +
-      '<div class="movie-card-body">' +
-      '<h3 class="movie-title">' +
-      movie.title +
-      "</h3>" +
-      '<p class="movie-meta">' +
-      movie.year +
+      "</div>" +
+
+      // Back of the card (overview text)
+      '<div class="card-back">' +
+      '<p class="card-back-overview">' +
+      (movie.overview || "No overview available.") +
       "</p>" +
+      "</div>" +
+
+      "</div>" +
+
+      '<div class="movie-card-body">' +
+      '<h3 class="movie-title">' + movie.title + "</h3>" +
+      '<p class="movie-meta">' + movie.year + " &middot; " + movie.originalLanguage.toUpperCase() + "</p>" +
       '<p class="movie-ratings">' +
-      '<span class="rating-badge" data-rating-imdb>IMDb: ...</span>' +
-      '<span class="rating-badge" data-rating-rt>RT: ...</span>' +
+      '<span class="rating-badge" id="imdb-' + movie.id + '">IMDb: ...</span>' +
+      '<span class="rating-badge" id="rt-' + movie.id + '">RT: ...</span>' +
       "</p>" +
       '<div class="movie-card-actions">' +
       '<button type="button" class="btn btn-secondary btn-small watchlist-btn" data-movie-id="' +
@@ -292,51 +312,37 @@ function renderMovies(movies) {
 
   movieResults.innerHTML = html;
 
-  // Fetch ratings 
-  for (let i = 0; i < movies.length; i++) {
+  // Fetch ratings for each movie asynchronously
+  for (var i = 0; i < movies.length; i++) {
     fillInRatings(movies[i]);
   }
 
-  // Hook up "Add to Watchlist" buttons
-  const watchlistButtons = document.querySelectorAll(".watchlist-btn");
-  for (let i = 0; i < watchlistButtons.length; i++) {
-    watchlistButtons[i].addEventListener("click", () => {
-      const movieId = Number(watchlistButtons[i].dataset.movieId);
-      const movie = findMovieById(movies, movieId);
-      handleAddToWatchlist(movie, watchlistButtons[i]);
+  // Hook up watchlist buttons
+  var watchlistButtons = document.querySelectorAll(".watchlist-btn");
+  for (var i = 0; i < watchlistButtons.length; i++) {
+    watchlistButtons[i].addEventListener("click", function () {
+      var movieId = Number(this.dataset.movieId);
+      var movie = findMovieById(lastMovies, movieId);
+      handleAddToWatchlist(movie, this);
     });
   }
 
-  // Hook up "Details" buttons
-  const detailsButtons = document.querySelectorAll(".details-btn");
-  for (let i = 0; i < detailsButtons.length; i++) {
-    detailsButtons[i].addEventListener("click", () => {
-      const movieId = Number(detailsButtons[i].dataset.movieId);
+  // Hook up details buttons
+  var detailsButtons = document.querySelectorAll(".details-btn");
+  for (var i = 0; i < detailsButtons.length; i++) {
+    detailsButtons[i].addEventListener("click", function () {
+      var movieId = Number(this.dataset.movieId);
       openDetailsPanel(movieId);
     });
   }
 }
 
+// Fills in IMDb and RT ratings once the OMDb call comes back
+async function fillInRatings(movie) {
+  var ratings = await getRatings(movie.title);
 
-function findMovieById(movies, movieId) {
-  for (let i = 0; i < movies.length; i++) {
-    if (movies[i].id === movieId) {
-      return movies[i];
-    }
-  }
-  return null;
-}
-
-// Fetches ratings 
-  const ratings = await getRatings(movie.title);
-
-  const card = document.querySelector('[data-movie-id="' + movie.id + '"]');
-  if (!card) {
-    return;
-  }
-
-  const imdbBadge = card.querySelector("[data-rating-imdb]");
-  const rtBadge = card.querySelector("[data-rating-rt]");
+  var imdbBadge = document.getElementById("imdb-" + movie.id);
+  var rtBadge = document.getElementById("rt-" + movie.id);
 
   if (imdbBadge) {
     imdbBadge.textContent = "IMDb: " + ratings.imdbRating;
@@ -344,8 +350,17 @@ function findMovieById(movies, movieId) {
   if (rtBadge) {
     rtBadge.textContent = "RT: " + ratings.rottenTomatoes;
   }
+}
 
-// Builds and shows the snack suggestion card
+function findMovieById(movies, movieId) {
+  for (var i = 0; i < movies.length; i++) {
+    if (movies[i].id === movieId) {
+      return movies[i];
+    }
+  }
+  return null;
+}
+
 function renderSnack(snack) {
   if (!snack) {
     snackResult.innerHTML =
@@ -360,117 +375,134 @@ function renderSnack(snack) {
     snack.name +
     '" width="200" height="150" />' +
     '<div class="snack-card-body">' +
-    '<h4 class="snack-name">' +
-    snack.name +
-    "</h4>" +
-    '<p class="snack-description">' +
-    snack.description +
-    "</p>" +
+    '<h4 class="snack-name">' + snack.name + "</h4>" +
+    '<p class="snack-description">' + snack.description + "</p>" +
     "</div>";
 }
 
-// "Too picky? Pick for us" button
-randomPickBtn.addEventListener("click", () => {
-  if (lastMovies.length === 0) {
-    return;
-  }
+// EVENT 7: "Pick for us" random button
+randomPickBtn.addEventListener("click", function () {
+  if (lastMovies.length === 0) return;
 
-  const randomIndex = Math.floor(Math.random() * lastMovies.length);
-  const chosenMovie = lastMovies[randomIndex];
-
-  const card = document.querySelector('[data-movie-id="' + chosenMovie.id + '"]');
+  var randomIndex = Math.floor(Math.random() * lastMovies.length);
+  var chosenMovie = lastMovies[randomIndex];
+  var card = document.querySelector('[data-movie-id="' + chosenMovie.id + '"]');
 
   if (card) {
-    card.classList.add("spinning");
+    card.classList.add("pulse");
     card.addEventListener(
       "animationend",
-      () => card.classList.remove("spinning"),
+      function () {
+        card.classList.remove("pulse");
+      },
       { once: true }
     );
     card.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 });
 
-
-
-// DETAILS PANEL
+// --- Details panel ---
 
 async function openDetailsPanel(movieId) {
   detailsPanel.hidden = false;
+  detailsPanel.classList.add("panel-open");
 
   detailsTitle.textContent = "Loading...";
   detailsMeta.textContent = "";
   detailsOverview.textContent = "";
+  detailsTagline.textContent = "";
+  detailsExtra.textContent = "";
 
-  const details = await getMovieDetails(movieId);
+  var details = await getMovieDetails(movieId);
 
   if (!details) {
     detailsTitle.textContent = "Could not load details";
     detailsOverview.textContent =
-      "Something went wrong fetching this movie's details. Please try again.";
+      "Something went wrong. Please try again.";
     return;
   }
 
   detailsTitle.textContent = details.title;
   detailsMeta.textContent =
-    details.year + " \u00B7 " + details.runtime + " min \u00B7 " + details.genres;
+    details.year + " · " + details.runtime + " min · " + details.genres;
   detailsOverview.textContent = details.overview;
+
+  if (details.tagline) {
+    detailsTagline.textContent = '"' + details.tagline + '"';
+  }
+
+  if (details.status) {
+    detailsExtra.textContent = "Status: " + details.status;
+  }
 }
 
-detailsCloseBtn.addEventListener("click", () => {
+// EVENT 8: Close details panel via button
+detailsCloseBtn.addEventListener("click", function () {
   detailsPanel.hidden = true;
+  detailsPanel.classList.remove("panel-open");
 });
 
-document.addEventListener("keydown", (event) => {
+// EVENT 9: Close details panel via Escape key
+document.addEventListener("keydown", function (event) {
   if (event.key === "Escape" && !detailsPanel.hidden) {
     detailsPanel.hidden = true;
+    detailsPanel.classList.remove("panel-open");
   }
 });
 
-// WATCHLIST
+// --- Watchlist ---
+
 function handleAddToWatchlist(movie, button) {
-  if (!movie) {
-    return;
-  }
+  if (!movie) return;
 
   addToWatchlist({
     id: movie.id,
     title: movie.title,
     posterUrl: movie.posterUrl,
     year: movie.year,
+    originalLanguage: movie.originalLanguage,
+    overview: movie.overview,
   });
 
-  button.textContent = "Added!";
+  button.textContent = "✓ Saved";
   button.disabled = true;
 
-  const card = button.closest(".movie-card");
+  // Small confirmation animation on the card
+  var card = button.closest(".movie-card");
   if (card) {
-    card.classList.add("confirm-action");
+    card.classList.add("confirm-save");
     card.addEventListener(
       "animationend",
-      () => card.classList.remove("confirm-action"),
+      function () {
+        card.classList.remove("confirm-save");
+      },
       { once: true }
     );
   }
+
+  // Update the watchlist count badge in the nav
+  updateWatchlistCount();
 }
 
 function renderWatchlist() {
-  const watchlist = getWatchlist();
+  var watchlist = getWatchlist();
 
   if (watchlist.length === 0) {
     watchlistEmpty.hidden = false;
     watchlistItems.innerHTML = "";
+    watchlistCount.textContent = "";
     return;
   }
 
   watchlistEmpty.hidden = true;
+  watchlistCount.textContent = "(" + watchlist.length + ")";
 
-  let html = "";
-  for (let i = 0; i < watchlist.length; i++) {
-    const movie = watchlist[i];
+  var html = "";
+  for (var i = 0; i < watchlist.length; i++) {
+    var movie = watchlist[i];
 
     html +=
-      '<article class="movie-card" data-movie-id="' +
+      '<article class="movie-card fade-in" data-movie-id="' +
       movie.id +
       '">' +
       '<img class="movie-poster" src="' +
@@ -479,11 +511,10 @@ function renderWatchlist() {
       movie.title +
       '" width="300" height="450" />' +
       '<div class="movie-card-body">' +
-      '<h3 class="movie-title">' +
-      movie.title +
-      "</h3>" +
-      '<p class="movie-meta">' +
-      movie.year +
+      '<h3 class="movie-title">' + movie.title + "</h3>" +
+      '<p class="movie-meta">' + movie.year + "</p>" +
+      '<p class="movie-overview-short">' +
+      (movie.overview ? movie.overview.slice(0, 80) + "..." : "") +
       "</p>" +
       '<div class="movie-card-actions">' +
       '<button type="button" class="btn btn-secondary btn-small remove-btn" data-movie-id="' +
@@ -496,17 +527,33 @@ function renderWatchlist() {
 
   watchlistItems.innerHTML = html;
 
-  const removeButtons = document.querySelectorAll(".remove-btn");
-  for (let i = 0; i < removeButtons.length; i++) {
-    removeButtons[i].addEventListener("click", () => {
-      const movieId = Number(removeButtons[i].dataset.movieId);
+  // EVENT 10: Remove from watchlist
+  var removeButtons = document.querySelectorAll(".remove-btn");
+  for (var i = 0; i < removeButtons.length; i++) {
+    removeButtons[i].addEventListener("click", function () {
+      var movieId = Number(this.dataset.movieId);
       removeFromWatchlist(movieId);
       renderWatchlist();
     });
   }
 }
 
+function updateWatchlistCount() {
+  var watchlist = getWatchlist();
+  if (watchlist.length > 0) {
+    watchlistCount.textContent = "(" + watchlist.length + ")";
+  } else {
+    watchlistCount.textContent = "";
+  }
+}
 
+// --- Load quiz from last session if available ---
+var savedQuiz = getLastQuiz();
+if (savedQuiz) {
+  player1Answers = savedQuiz.player1 || {};
+  player2Answers = savedQuiz.player2 || {};
+}
 
-
-renderQuestion();
+// --- Init ---
+updateWatchlistCount();
+renderQuestion("right");

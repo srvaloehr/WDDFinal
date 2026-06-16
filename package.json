@@ -1,0 +1,9 @@
+{
+  "name": "reelmood",
+  "version": "1.0.0",
+  "description": "Movie and snack picker for two",
+  "scripts": {
+    "start": "npx serve -s . -l ${PORT:-3000}",
+    "dev": "npx serve -s . -l 3000"
+  }
+}

@@ -1,5 +1,6 @@
+// quiz.js - Quiz questions and logic for combining two players' answers
 
-export const QUIZ_QUESTIONS = [
+export var QUIZ_QUESTIONS = [
   {
     id: "energy",
     text: "How much energy do you have tonight?",
@@ -11,7 +12,7 @@ export const QUIZ_QUESTIONS = [
   },
   {
     id: "mood",
-    text: "What do you want out of the movie?",
+    text: "What kind of movie do you want?",
     options: [
       { label: "Something to laugh at", value: "comedy" },
       { label: "Something to think about", value: "drama" },
@@ -48,43 +49,39 @@ export const QUIZ_QUESTIONS = [
   },
 ];
 
-
-
-
-
-
-
+// Takes both players' answer objects and returns one combined settings object
 export function combineAnswers(player1Answers, player2Answers) {
-  const settings = {};
+  var settings = {};
 
-  // --- Genre ---
+  // Genre: if they agree use it, otherwise go with player 1
   if (player1Answers.mood === player2Answers.mood) {
     settings.genre = player1Answers.mood;
   } else {
-    // They picked different things, so go with Person 1 this time
     settings.genre = player1Answers.mood;
   }
 
-  // --- Energy ---
+  // Energy: if they agree use it, otherwise split the difference
   if (player1Answers.energy === player2Answers.energy) {
     settings.energy = player1Answers.energy;
   } else {
     settings.energy = "medium";
   }
 
-  // --- Length (the shorter answer wins) ---
-  const lengthOrder = { short: 1, medium: 2, any: 3 };
-  if (lengthOrder[player1Answers.length] <= lengthOrder[player2Answers.length]) {
-    settings.length = player1Answers.length;
+  // Length: pick the shorter of the two preferences
+  var lengthOrder = { short: 1, medium: 2, any: 3 };
+  var p1Length = player1Answers.length || "any";
+  var p2Length = player2Answers.length || "any";
+  if (lengthOrder[p1Length] <= lengthOrder[p2Length]) {
+    settings.length = p1Length;
   } else {
-    settings.length = player2Answers.length;
+    settings.length = p2Length;
   }
 
-  // --- Subtitles ---
+  // Subtitles: only OK if both agree
   settings.subtitlesOk =
     player1Answers.subtitles === "yes" && player2Answers.subtitles === "yes";
 
-  // --- Snack ---
+  // Snack: if they agree use it, otherwise go mixed
   if (player1Answers.snack === player2Answers.snack) {
     settings.snack = player1Answers.snack;
   } else {

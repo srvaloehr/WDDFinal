@@ -1,3 +1,6 @@
+// api.js - All third-party API calls
+// Uses: TMDB (2 endpoints: discover + movie details), OMDb, TheMealDB
+
 import {
   TMDB_API_KEY,
   TMDB_BASE_URL,
@@ -7,61 +10,60 @@ import {
   MEALDB_BASE_URL,
 } from "./config.js";
 
-
-
-
-const GENRE_MAP = {
+// Maps quiz mood answers to TMDB genre IDs
+var GENRE_MAP = {
   comedy: 35,
   drama: 18,
-  emotional: 10749, // Romance
+  emotional: 10749,
   action: 28,
 };
 
-
-
-const SNACK_CATEGORY_MAP = {
+// Maps quiz snack answers to MealDB categories
+var SNACK_CATEGORY_MAP = {
   salty: "Side",
   sweet: "Dessert",
   mixed: "Starter",
   any: "Snack",
 };
 
+// --- ENDPOINT 1: TMDB /discover/movie ---
+// Returns up to 4 movies for a given genre
 
 export async function getMovies(genre) {
   try {
-    // Look up the TMDB genre id
-    let genreId = GENRE_MAP[genre];
+    var genreId = GENRE_MAP[genre];
     if (!genreId) {
       genreId = GENRE_MAP.comedy;
     }
 
-    const url =
-      `${TMDB_BASE_URL}/discover/movie` +
-      `?api_key=${TMDB_API_KEY}` +
-      `&with_genres=${genreId}` +
-      `&sort_by=popularity.desc` +
-      `&language=en-US` +
-      `&page=1`;
+    var url =
+      TMDB_BASE_URL +
+      "/discover/movie" +
+      "?api_key=" + TMDB_API_KEY +
+      "&with_genres=" + genreId +
+      "&sort_by=popularity.desc" +
+      "&language=en-US" +
+      "&page=1";
 
-    const response = await fetch(url);
+    var response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error("TMDB request failed: " + response.status);
+      throw new Error("TMDB discover request failed: " + response.status);
     }
 
-    const data = await response.json();
+    var data = await response.json();
 
-    // Build a simple array
-    const movies = [];
-    for (let i = 0; i < data.results.length && i < 3; i++) {
-      const movie = data.results[i];
+    var movies = [];
+    var limit = Math.min(data.results.length, 4);
+    for (var i = 0; i < limit; i++) {
+      var movie = data.results[i];
 
-      let posterUrl = "https://placehold.co/300x450/2d3748/f0f0f0?text=No+Poster";
+      var posterUrl = "https://placehold.co/300x450/2d3748/f0f0f0?text=No+Poster";
       if (movie.poster_path) {
         posterUrl = TMDB_IMAGE_BASE_URL + movie.poster_path;
       }
 
-      let year = "N/A";
+      var year = "N/A";
       if (movie.release_date) {
         year = movie.release_date.slice(0, 4);
       }
@@ -71,6 +73,14 @@ export async function getMovies(genre) {
         title: movie.title,
         year: year,
         posterUrl: posterUrl,
+        overview: movie.overview,
+        voteAverage: movie.vote_average,
+        voteCount: movie.vote_count,
+        popularity: movie.popularity,
+        originalLanguage: movie.original_language,
+        genreIds: movie.genre_ids,
+        adult: movie.adult,
+        backdropPath: movie.backdrop_path,
       });
     }
 
@@ -81,34 +91,34 @@ export async function getMovies(genre) {
   }
 }
 
+// --- ENDPOINT 2: TMDB /movie/{id} ---
+// Returns full details for one movie
 
-
-
-export async function getMovieDetails(movieId) {}
+export async function getMovieDetails(movieId) {
   try {
-    const url =
-      `${TMDB_BASE_URL}/movie/${movieId}` +
-      `?api_key=${TMDB_API_KEY}` +
-      `&language=en-US`;
+    var url =
+      TMDB_BASE_URL +
+      "/movie/" + movieId +
+      "?api_key=" + TMDB_API_KEY +
+      "&language=en-US";
 
-    const response = await fetch(url);
+    var response = await fetch(url);
 
     if (!response.ok) {
       throw new Error("TMDB details request failed: " + response.status);
     }
 
-    const data = await response.json();
+    var data = await response.json();
 
-    
-    let genreNames = "";
-    for (let i = 0; i < data.genres.length; i++) {
+    var genreNames = "";
+    for (var i = 0; i < data.genres.length; i++) {
       if (i > 0) {
         genreNames += ", ";
       }
       genreNames += data.genres[i].name;
     }
 
-    let year = "N/A";
+    var year = "N/A";
     if (data.release_date) {
       year = data.release_date.slice(0, 4);
     }
@@ -119,83 +129,91 @@ export async function getMovieDetails(movieId) {}
       runtime: data.runtime,
       genres: genreNames,
       overview: data.overview,
+      tagline: data.tagline,
+      budget: data.budget,
+      revenue: data.revenue,
+      status: data.status,
+      homepage: data.homepage,
     };
   } catch (error) {
     console.error("getMovieDetails error:", error);
     return null;
   }
+}
+
+// --- ENDPOINT 3: OMDb ---
+// Returns IMDb and Rotten Tomatoes ratings for a movie title
 
 export async function getRatings(movieTitle) {
   try {
-    const url =
-      `${OMDB_BASE_URL}?t=${encodeURIComponent(movieTitle)}` +
-      `&apikey=${OMDB_API_KEY}`;
+    var url =
+      OMDB_BASE_URL +
+      "?t=" + encodeURIComponent(movieTitle) +
+      "&apikey=" + OMDB_API_KEY;
 
-    const response = await fetch(url);
+    var response = await fetch(url);
 
     if (!response.ok) {
       throw new Error("OMDb request failed: " + response.status);
     }
 
-    const data = await response.json();
+    var data = await response.json();
 
-    // If OMDb couldn't find the movie,: "False"
     if (data.Response === "False") {
       return { imdbRating: "N/A", rottenTomatoes: "N/A" };
     }
 
-    // OMDb returns ratings as a list
-    let rottenTomatoes = "N/A";
+    var rottenTomatoes = "N/A";
     if (data.Ratings) {
-      for (let i = 0; i < data.Ratings.length; i++) {
+      for (var i = 0; i < data.Ratings.length; i++) {
         if (data.Ratings[i].Source === "Rotten Tomatoes") {
           rottenTomatoes = data.Ratings[i].Value;
         }
       }
     }
 
-    let imdbRating = "N/A";
-    if (data.imdbRating) {
-      imdbRating = data.imdbRating;
-    }
+    var imdbRating = data.imdbRating || "N/A";
 
-    return { imdbRating, rottenTomatoes };
+    return { imdbRating: imdbRating, rottenTomatoes: rottenTomatoes };
   } catch (error) {
     console.error("getRatings error:", error);
     return { imdbRating: "N/A", rottenTomatoes: "N/A" };
   }
 }
 
+// --- ENDPOINT 4: TheMealDB ---
+// Returns a random snack suggestion for the given preference
+
 export async function getSnack(snackPreference) {
   try {
-    let category = SNACK_CATEGORY_MAP[snackPreference];
+    var category = SNACK_CATEGORY_MAP[snackPreference];
     if (!category) {
       category = "Snack";
     }
 
-    const url = `${MEALDB_BASE_URL}/filter.php?c=${category}`;
+    var url = MEALDB_BASE_URL + "/filter.php?c=" + category;
 
-    const response = await fetch(url);
+    var response = await fetch(url);
 
     if (!response.ok) {
       throw new Error("TheMealDB request failed: " + response.status);
     }
 
-    const data = await response.json();
+    var data = await response.json();
 
-    // data.meals can be null if there are no results
     if (!data.meals || data.meals.length === 0) {
       return null;
     }
 
-    // Pick 
-    const randomIndex = Math.floor(Math.random() * data.meals.length);
-    const meal = data.meals[randomIndex];
+    // Pick a random meal from the list
+    var randomIndex = Math.floor(Math.random() * data.meals.length);
+    var meal = data.meals[randomIndex];
 
     return {
       name: meal.strMeal,
       imageUrl: meal.strMealThumb,
-      description: "A " + category.toLowerCase() + " option to go with tonight's movie.",
+      mealId: meal.idMeal,
+      description: "A " + category.toLowerCase() + " option to enjoy during the movie.",
     };
   } catch (error) {
     console.error("getSnack error:", error);
