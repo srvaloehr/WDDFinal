@@ -49,7 +49,7 @@
           </nav>
 
           <button type="button" class="dark-mode-btn" id="dark-mode-toggle">
-            🌙 Dark Mode
+            ☀️ Light Mode
           </button>
         </div>
       </div>
@@ -110,7 +110,7 @@
         <div id="movie-results" class="movie-grid" aria-live="polite"></div>
 
         <h3 class="section-subheading">Snack Pairing</h3>
-        <div id="snack-result" class="snack-card"></div>
+        <div id="snack-result" class="snack-card" style="display:none;"></div>
 
         <div class="results-actions">
           <button type="button" id="random-pick-btn" class="btn btn-secondary">
@@ -118,7 +118,6 @@
           </button>
         </div>
       </section>
-
 
       <div
         id="details-panel"
@@ -137,7 +136,7 @@
           >
             &times;
           </button>
-          <h3 id="details-title" class="details-title">Movie Title</h3>
+          <h3 id="details-title" class="details-title"></h3>
           <p id="details-meta" class="details-meta"></p>
           <p id="details-tagline" class="details-tagline"></p>
           <p id="details-overview" class="details-overview"></p>

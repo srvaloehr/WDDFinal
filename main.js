@@ -1,3 +1,5 @@
+// Lookup titles for sections logic
+
 import { QUIZ_QUESTIONS, combineAnswers } from "./quiz.js";
 import {
   getWatchlist,
@@ -12,7 +14,7 @@ import {
 } from "./storage.js";
 import { getMovies, getMovieDetails, getRatings, getSnack } from "./api.js";
 
-// --- Grab all the DOM elements we need ---
+//  Grab all the DOM 
 
 var navButtons = document.querySelectorAll(".nav-btn");
 var views = document.querySelectorAll(".view");
@@ -43,6 +45,7 @@ var watchlistCount = document.getElementById("watchlist-count");
 
 var darkModeToggle = document.getElementById("dark-mode-toggle");
 
+//  App state 
 
 var currentPlayer = 1;
 var currentQuestionIndex = 0;
@@ -50,25 +53,26 @@ var player1Answers = {};
 var player2Answers = {};
 var lastMovies = [];
 
-
+// --- Light mode toggle: site is dark (AMC theme) 
+// Saved preference: "true" means user switched to light mode
 
 if (getDarkMode()) {
-  document.body.classList.add("dark-mode");
-  darkModeToggle.textContent = "☀️ Light Mode";
+  document.body.classList.add("light-mode");
+  darkModeToggle.textContent = "🌙 Dark Mode";
 }
 
-//  Dark mode toggle 
+// Light/dark toggle 
 darkModeToggle.addEventListener("click", function () {
-  var isDark = document.body.classList.toggle("dark-mode");
-  saveDarkMode(isDark);
-  if (isDark) {
-    darkModeToggle.textContent = "☀️ Light Mode";
-  } else {
+  var isLight = document.body.classList.toggle("light-mode");
+  saveDarkMode(isLight);
+  if (isLight) {
     darkModeToggle.textContent = "🌙 Dark Mode";
+  } else {
+    darkModeToggle.textContent = "☀️ Light Mode";
   }
 });
 
-// Navigate
+// Navigation between
 for (var i = 0; i < navButtons.length; i++) {
   navButtons[i].addEventListener("click", function () {
     var viewId = this.dataset.view;
@@ -101,7 +105,7 @@ function showView(viewId) {
   }
 }
 
-// Player toggl
+// Player toggle
 for (var i = 0; i < playerButtons.length; i++) {
   playerButtons[i].addEventListener("click", function () {
     currentPlayer = Number(this.dataset.player);
@@ -116,7 +120,7 @@ for (var i = 0; i < playerButtons.length; i++) {
   });
 }
 
-
+//  Quiz rendering 
 
 function renderQuestion(direction) {
   var question = QUIZ_QUESTIONS[currentQuestionIndex];
@@ -155,7 +159,7 @@ function renderQuestion(direction) {
     "</div>" +
     "</div>";
 
-  //  Quiz option selection 
+  // Quiz option
   var optionButtons = quizCardContainer.querySelectorAll(".quiz-option");
   for (var i = 0; i < optionButtons.length; i++) {
     optionButtons[i].addEventListener("click", function () {
@@ -177,7 +181,7 @@ function renderQuestion(direction) {
     currentQuestionIndex === QUIZ_QUESTIONS.length - 1 ? "Finish" : "Next";
 }
 
-// Quiz Next / Finish button
+// Quiz Next 
 quizNextBtn.addEventListener("click", function () {
   var isLast = currentQuestionIndex === QUIZ_QUESTIONS.length - 1;
   if (isLast) {
@@ -188,7 +192,7 @@ quizNextBtn.addEventListener("click", function () {
   renderQuestion("right");
 });
 
-// Quiz Back 
+//  Quiz Back
 quizBackBtn.addEventListener("click", function () {
   if (currentQuestionIndex === 0) return;
   currentQuestionIndex--;
@@ -213,21 +217,23 @@ function handleQuizFinish() {
     return;
   }
 
-  // Save quiz answers :results
+  // Both players done 
   saveLastQuiz(player1Answers, player2Answers);
   showView("results-view");
   loadResults();
 }
 
+//  Results 
 
 async function loadResults() {
   resultsLoading.hidden = false;
   movieResults.innerHTML = "";
   snackResult.innerHTML = "";
+  snackResult.style.display = "none";
 
   var settings = combineAnswers(player1Answers, player2Answers);
 
-  // Save the last genre so the page can remind next visit
+  // Save the last genre
   saveLastGenre(settings.genre);
 
   // Show the last genre
@@ -243,6 +249,7 @@ async function loadResults() {
   lastMovies = movies;
 
   resultsLoading.hidden = true;
+  snackResult.style.display = "";
 
   renderMovies(movies);
   renderSnack(snack);
@@ -308,12 +315,12 @@ function renderMovies(movies) {
 
   movieResults.innerHTML = html;
 
-  // Fetch ratings
+  // Fetch ratings 
   for (var i = 0; i < movies.length; i++) {
     fillInRatings(movies[i]);
   }
 
-  // Watchlist buttons
+  // Watchlist button
   var watchlistButtons = document.querySelectorAll(".watchlist-btn");
   for (var i = 0; i < watchlistButtons.length; i++) {
     watchlistButtons[i].addEventListener("click", function () {
@@ -322,7 +329,6 @@ function renderMovies(movies) {
       handleAddToWatchlist(movie, this);
     });
   }
-
 
   var detailsButtons = document.querySelectorAll(".details-btn");
   for (var i = 0; i < detailsButtons.length; i++) {
@@ -334,7 +340,6 @@ function renderMovies(movies) {
 }
 
 // Fills in IMDb 
-async function fillInRatings(movie) {
   var ratings = await getRatings(movie.title);
 
   var imdbBadge = document.getElementById("imdb-" + movie.id);
@@ -346,7 +351,7 @@ async function fillInRatings(movie) {
   if (rtBadge) {
     rtBadge.textContent = "RT: " + ratings.rottenTomatoes;
   }
-}
+
 
 function findMovieById(movies, movieId) {
   for (var i = 0; i < movies.length; i++) {
@@ -376,7 +381,7 @@ function renderSnack(snack) {
     "</div>";
 }
 
-// "Pick for us"
+// Pick for us
 randomPickBtn.addEventListener("click", function () {
   if (lastMovies.length === 0) return;
 
@@ -397,7 +402,7 @@ randomPickBtn.addEventListener("click", function () {
   }
 });
 
-
+//  Details 
 
 async function openDetailsPanel(movieId) {
   detailsPanel.hidden = false;
@@ -432,12 +437,13 @@ async function openDetailsPanel(movieId) {
   }
 }
 
+
 detailsCloseBtn.addEventListener("click", function () {
   detailsPanel.hidden = true;
   detailsPanel.classList.remove("panel-open");
 });
 
-// Close details
+// Close details 
 document.addEventListener("keydown", function (event) {
   if (event.key === "Escape" && !detailsPanel.hidden) {
     detailsPanel.hidden = true;
@@ -445,6 +451,7 @@ document.addEventListener("keydown", function (event) {
   }
 });
 
+// Watchlist 
 
 function handleAddToWatchlist(movie, button) {
   if (!movie) return;
@@ -461,7 +468,7 @@ function handleAddToWatchlist(movie, button) {
   button.textContent = "✓ Saved";
   button.disabled = true;
 
-  //  Animation card
+  // Confirmation animation 
   var card = button.closest(".movie-card");
   if (card) {
     card.classList.add("confirm-save");
@@ -474,7 +481,7 @@ function handleAddToWatchlist(movie, button) {
     );
   }
 
-  // Update the watchlist
+  // Update the watchlist 
   updateWatchlistCount();
 }
 
@@ -521,7 +528,7 @@ function renderWatchlist() {
 
   watchlistItems.innerHTML = html;
 
-  // Remove from watchlist
+  //Remove from watchlist
   var removeButtons = document.querySelectorAll(".remove-btn");
   for (var i = 0; i < removeButtons.length; i++) {
     removeButtons[i].addEventListener("click", function () {
@@ -541,12 +548,13 @@ function updateWatchlistCount() {
   }
 }
 
-
+// --- Load quiz from last 
 var savedQuiz = getLastQuiz();
 if (savedQuiz) {
   player1Answers = savedQuiz.player1 || {};
   player2Answers = savedQuiz.player2 || {};
 }
+
 
 updateWatchlistCount();
 renderQuestion("right");
