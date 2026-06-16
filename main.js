@@ -386,7 +386,7 @@ function renderSnack(snack) {
 // Pick for us
 randomPickBtn.addEventListener("click", function () {
   if (lastMovies.length === 0) return;
-
+console.log("lastMovies:", lastMovies, "card found:", card);
   var randomIndex = Math.floor(Math.random() * lastMovies.length);
   var chosenMovie = lastMovies[randomIndex];
   var card = document.querySelector('[data-movie-id="' + chosenMovie.id + '"]');
