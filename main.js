@@ -386,23 +386,20 @@ function renderSnack(snack) {
 // Pick for us
 randomPickBtn.addEventListener("click", function () {
   if (lastMovies.length === 0) return;
+
   var randomIndex = Math.floor(Math.random() * lastMovies.length);
   var chosenMovie = lastMovies[randomIndex];
   var card = document.querySelector('[data-movie-id="' + chosenMovie.id + '"]');
-  console.log("lastMovies:", lastMovies, "card found:", card);
-  
+
   if (card) {
     card.classList.add("pulse");
-    card.addEventListener(
-      "animationend",
-      function () {
-        card.classList.remove("pulse");
-      },
-      { once: true }
-    );
+    setTimeout(function () {
+      card.classList.remove("pulse");
+    }, 700);
     card.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 });
+
 
 //  Details 
 

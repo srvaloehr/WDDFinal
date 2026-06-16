@@ -403,7 +403,7 @@ body.light-mode .quiz-question {
 }
 
 .pulse {
-  animation: pulse 0.7s ease;
+  animation: pulse 2.0s ease;
 }
 
 
