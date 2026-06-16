@@ -613,6 +613,10 @@ body.light-mode .snack-name {
   padding: 1.5rem;
 }
 
+.details-panel[hidden] {
+  display: none;
+}
+
 .details-panel-content {
   background: #1a1a1a;
   border: 1px solid #cc0000;

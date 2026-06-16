@@ -321,25 +321,27 @@ function renderMovies(movies) {
   }
 
   // Watchlist button
-  var watchlistButtons = document.querySelectorAll(".watchlist-btn");
+var watchlistButtons = document.querySelectorAll(".watchlist-btn");
   for (var i = 0; i < watchlistButtons.length; i++) {
     watchlistButtons[i].addEventListener("click", function () {
-      var movieId = Number(this.dataset.movieId);
-      var movie = findMovieById(lastMovies, movieId);
-      handleAddToWatchlist(movie, this);
+      var clickedId = Number(this.dataset.movieId);
+      var clickedMovie = findMovieById(lastMovies, clickedId);
+      handleAddToWatchlist(clickedMovie, this);
     });
   }
 
   var detailsButtons = document.querySelectorAll(".details-btn");
   for (var i = 0; i < detailsButtons.length; i++) {
     detailsButtons[i].addEventListener("click", function () {
-      var movieId = Number(this.dataset.movieId);
-      openDetailsPanel(movieId);
+      var clickedId = Number(this.dataset.movieId);
+      openDetailsPanel(clickedId);
     });
   }
 }
 
+
 // Fills in IMDb 
+async function fillInRatings(movie) {
   var ratings = await getRatings(movie.title);
 
   var imdbBadge = document.getElementById("imdb-" + movie.id);
@@ -351,7 +353,7 @@ function renderMovies(movies) {
   if (rtBadge) {
     rtBadge.textContent = "RT: " + ratings.rottenTomatoes;
   }
-
+}
 
 function findMovieById(movies, movieId) {
   for (var i = 0; i < movies.length; i++) {
